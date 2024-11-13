@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QDialog, QLineEdit, QLabel, QFormLayout, QDialogButtonBox
 import sys
-#from lib import scp_download_file
 import functions
 
 # nodes
@@ -10,6 +9,27 @@ def node_list():
 # logs
 def log_list():
     return ["Log1", "Log2", "Log3"]
+
+# Move function definitions above the GUI classes
+def get_repo_info():
+    dialog = InputDialog()
+    if dialog.exec_() == QDialog.Accepted:
+        username, password, hostname = dialog.get_inputs()
+        functions.get_repo_info(username, password)
+        QMessageBox.information(None, "Repo Info", f"Repo Info Fetched!\nUsername: {username}\nHostname: {hostname}")
+
+def get_logs(node, log):
+    dialog = InputDialog()
+    if dialog.exec_() == QDialog.Accepted:
+        username, password = dialog.get_inputs()
+        selected_items = f"Selected from List 1: {node}\nSelected from List 2: {log}"
+        functions.get_logs(node, username, password, log)
+        QMessageBox.information(None, "Logs", f"Fetching logs for:\n{selected_items}\nUsername: {username}\nHostname: {node}")
+
+def send_file(username, password, hostname):
+    # send file to remote host
+    functions.send_file(hostname, username, password)
+    QMessageBox.information(None, "Send File", f"File sent to {hostname} using Username: {username}")
 
 class InputDialog(QDialog):
     def __init__(self):
@@ -45,25 +65,37 @@ class InputDialog(QDialog):
     def get_inputs(self):
         return self.username_input.text(), self.password_input.text(), self.hostname_input.text()
 
-def get_repo_info():
-    dialog = InputDialog()
-    if dialog.exec_() == QDialog.Accepted:
-        username, password, hostname = dialog.get_inputs()
-        functions.get_repo_info(username, password)
-        QMessageBox.information(None, "Repo Info", f"Repo Info Fetched!\nUsername: {username}\nHostname: {hostname}")
+class SimpleInputDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Input Username and Password")
+        
+        # Create form layout
+        self.layout = QFormLayout()
+        
+        # Create input fields
+        self.username_input = QLineEdit()
+        self.password_input = QLineEdit()
+        
+        # Set password input to hide text
+        self.password_input.setEchoMode(QLineEdit.Password)
+        
+        # Add fields to layout
+        self.layout.addRow(QLabel("Username:"), self.username_input)
+        self.layout.addRow(QLabel("Password:"), self.password_input)
+        
+        # Create buttons
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        
+        # Add button box to layout
+        self.layout.addWidget(self.button_box)
+        
+        self.setLayout(self.layout)
 
-def get_logs(selected_from_list1, selected_from_list2):
-    dialog = InputDialog()
-    if dialog.exec_() == QDialog.Accepted:
-        username, password, hostname = dialog.get_inputs()
-        selected_items = f"Selected from List 1: {selected_from_list1}\nSelected from List 2: {selected_from_list2}"
-        functions.get_logs(hostname, username, password)
-        QMessageBox.information(None, "Logs", f"Fetching logs for:\n{selected_items}\nUsername: {username}\nHostname: {hostname}")
-
-def send_file(username, password, hostname):
-    # send file to remote host
-    functions.send_file(hostname, username, password)
-    QMessageBox.information(None, "Send File", f"File sent to {hostname} using Username: {username}")
+    def get_inputs(self):
+        return self.username_input.text(), self.password_input.text()
 
 class MyApp(QWidget):
     def __init__(self):
@@ -116,15 +148,24 @@ class MyApp(QWidget):
             self.list_widget2.addItem(item)
     
     def get_selected_logs(self):
-        selected_from_list1 = [item.text() for item in self.list_widget1.selectedItems()]
-        selected_from_list2 = [item.text() for item in self.list_widget2.selectedItems()]
-        get_logs(selected_from_list1, selected_from_list2)
+        nodes = [item.text() for item in self.list_widget1.selectedItems()]
+        logs = [item.text() for item in self.list_widget2.selectedItems()]
+        for node in nodes:  
+            for log in logs:
+                get_logs(node, log)
     
     def send_file_dialog(self):
         dialog = InputDialog()
         if dialog.exec_() == QDialog.Accepted:
             username, password, hostname = dialog.get_inputs()
             send_file(username, password, hostname)
+
+   #def get 
+    def get_username_password(self):
+        dialog = SimpleInputDialog()
+        if dialog.exec_() == QDialog.Accepted:
+            username, password = dialog.get_inputs()
+            return username, password
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
