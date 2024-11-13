@@ -70,3 +70,17 @@ def extract_date_from_filename(filename):
         time_part = filename[-4:-4+4]  # Extract the last 4 characters for time
         return date_part, time_part
     return None, None
+
+def scp_upload_file(remote_host, remote_path, local_folder, username, password):
+    # Implement the logic to upload a file to the remote host
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(remote_host, username=username, password=password)
+        
+        with SCPClient(ssh.get_transport()) as scp:
+            scp.put(local_folder, remote_path)
+        
+        print(f"File uploaded to {remote_path}")
+    finally:
+        ssh.close()
